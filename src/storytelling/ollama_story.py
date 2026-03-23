@@ -137,4 +137,3 @@ def split_story_sections(story_text: str) -> dict[str, str]:
             sections[heading] = match.group(1).strip()
 
     return sections
-

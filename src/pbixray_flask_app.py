@@ -7,7 +7,6 @@ from flask_cors import CORS
 from pbixray import PBIXRay
 from storytelling.ollama_story import build_story_context
 
-
 app = Flask(__name__)
 CORS(
     app,
