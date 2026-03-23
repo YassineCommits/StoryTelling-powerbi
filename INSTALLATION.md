@@ -104,6 +104,94 @@ python src/pbixray_server.py
 
 This will start the server using the stdio transport, which can be useful for testing or for integrating with clients that connect to running servers.
 
+## Ollama Setup (Local LLM + MCP)
+
+If you want local LLM + this MCP server in the same machine:
+
+```bash
+# 1) install ollama locally and pull a model
+./scripts/setup_ollama.sh
+
+# optional model:
+# ./scripts/setup_ollama.sh llama3.1:8b
+
+# 2) run MCP server with ollama available
+./scripts/run_with_ollama.sh
+```
+
+Use `examples/config/ollama_mcp_client_config.json` as a starting point for your MCP client config.
+
+## Flask Dashboard (Visualization UI)
+
+Run a local web UI for PBIX stats visualization:
+
+```bash
+chmod +x ./scripts/run_flask_dashboard.sh
+./scripts/run_flask_dashboard.sh
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5050 (or printed port if 5050 is already in use)
+```
+
+## Storytelling With Ollama
+
+The project now supports PBIX storytelling narratives through Ollama in both MCP and Flask UI.
+
+Optional environment variables:
+
+```bash
+export OLLAMA_BASE_URL="http://127.0.0.1:11434"
+export OLLAMA_MODEL="llama3.2:3b"
+```
+
+### MCP tool flow
+
+```bash
+# Start server
+./scripts/run_with_ollama.sh
+
+# Then call these tools from your MCP client:
+# 1) load_pbix_file(file_path="...")
+# 2) generate_storytelling_narrative(model_name="llama3.2:3b")
+```
+
+### Streaming Story UI (Vercel AI SDK)
+
+Narrative is streamed in the browser (no HTML download). Flask only exposes PBIX context at `GET /api/pbix/context`.
+
+Terminal 1:
+
+```bash
+./scripts/run_flask_dashboard.sh
+```
+
+Note the printed port (e.g. `5052`).
+
+Terminal 2:
+
+```bash
+cd web
+cp .env.example .env.local
+# Set FLASK_URL to match Flask, e.g. http://127.0.0.1:5052
+chmod +x ../scripts/run_story_ui.sh
+../scripts/run_story_ui.sh
+```
+
+Open `http://127.0.0.1:3000`, paste the PBIX path, click **Generate story**.
+
+**GET `/storytelling` on Flask** redirects to the Story UI (default `http://127.0.0.1:3000`). Override with `STORY_UI_URL` if needed.
+
+### Flask-only charts
+
+```bash
+./scripts/run_flask_dashboard.sh
+```
+
+Use **Analyze** for tables + charts. Storytelling uses the Next app above.
+
 ## Troubleshooting
 
 If you encounter issues with the PBIXRay MCP server, try the following steps:

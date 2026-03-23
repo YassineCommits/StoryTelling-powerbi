@@ -18,6 +18,7 @@ from typing import Optional
 
 from mcp.server.fastmcp import FastMCP, Context
 from pbixray import PBIXRay
+from storytelling.ollama_story import build_story_context, generate_story_with_ollama
 
 
 # Parse command line arguments
@@ -784,6 +785,38 @@ def get_statistics(ctx: Context, table_name: str = None, column_name: str = None
     except Exception as e:
         ctx.info(f"Error retrieving statistics: {str(e)}")
         return f"Error retrieving statistics: {str(e)}"
+
+
+@mcp.tool()
+async def generate_storytelling_narrative(ctx: Context, model_name: str = None) -> str:
+    """
+    Generate a business storytelling narrative from the currently loaded PBIX model using Ollama.
+
+    Args:
+        model_name: Optional Ollama model override (for example: "llama3.2:3b")
+
+    Returns:
+        A full narrative with overview, insights, risks, and recommended actions.
+    """
+    if current_model is None:
+        return "Error: No Power BI file loaded. Please use load_pbix_file first."
+
+    try:
+        await ctx.report_progress(10, 100)
+
+        context = build_story_context(
+            current_model_path or "unknown.pbix",
+            current_model.tables,
+            current_model.statistics,
+        )
+
+        await ctx.report_progress(50, 100)
+        story = generate_story_with_ollama(context=context, model=model_name)
+        await ctx.report_progress(100, 100)
+        return story
+    except Exception as e:
+        await ctx.info(f"Error generating storytelling narrative: {str(e)}")
+        return f"Error generating storytelling narrative: {str(e)}"
 
 
 @mcp.tool()

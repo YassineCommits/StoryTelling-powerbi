@@ -41,3 +41,9 @@ claude_desktop_config.json
 # otros
 informe_mercado.pbix
 *.code-workspace
+
+# Next.js story UI
+web/node_modules/
+web/.next/
+web/out/
+web/.env.local

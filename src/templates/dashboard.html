@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PBIXRay Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #111827;
+        --muted: #94a3b8;
+        --text: #e5e7eb;
+        --ok: #22c55e;
+        --warn: #ef4444;
+        --accent: #38bdf8;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: linear-gradient(120deg, #020617, #0b1223);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .card {
+        background: rgba(17, 24, 39, 0.85);
+        border: 1px solid #1f2937;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      h1,
+      h2 {
+        margin: 0 0 12px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+      }
+      input[type="text"] {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid #334155;
+        background: #0b1223;
+        color: var(--text);
+        padding: 10px 12px;
+      }
+      button {
+        border: 0;
+        border-radius: 10px;
+        background: var(--accent);
+        color: #001018;
+        font-weight: 700;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .metric {
+        background: #0b1223;
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 10px;
+      }
+      .metric .k {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .metric .v {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .error {
+        color: #fecaca;
+        background: #7f1d1d;
+        border: 1px solid #ef4444;
+        border-radius: 10px;
+        padding: 10px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        text-align: left;
+        border-bottom: 1px solid #1f2937;
+        padding: 8px;
+      }
+      .charts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .tables-list {
+        columns: 2;
+        margin: 0;
+        padding-left: 18px;
+      }
+      .story-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .story-block {
+        background: #0b1223;
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 12px;
+      }
+      .story-block h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      .story-form {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 10px;
+      }
+      @media (max-width: 900px) {
+        .grid,
+        .charts,
+        .story-grid,
+        .story-form {
+          grid-template-columns: 1fr;
+        }
+        .tables-list {
+          columns: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>PBIX Visualization Dashboard</h1>
+        <p class="muted">Load a local .pbix file and inspect tables + column statistics.</p>
+        <p class="muted">
+          <strong>Streaming storytelling (Vercel AI SDK + Ollama):</strong> run
+          <code>./scripts/run_story_ui.sh</code> then open <a href="http://127.0.0.1:3000" style="color: var(--accent)">http://127.0.0.1:3000</a>.
+          Opening <code>/storytelling</code> in the browser redirects there. Do not use GET on the old POST-only route.
+        </p>
+        <form action="/analyze" method="post">
+          <input type="text" name="pbix_path" value="{{ default_path or '' }}" placeholder="/absolute/path/to/file.pbix" />
+          <button type="submit">Analyze</button>
+        </form>
+      </div>
+
+      {% if error %}
+      <div class="card error">{{ error }}</div>
+      {% endif %}
+
+      {% if summary %}
+      <div class="card">
+        <h2>{{ file_name }}</h2>
+        <div class="grid">
+          <div class="metric"><div class="k">Tables</div><div class="v">{{ tables|length }}</div></div>
+          <div class="metric"><div class="k">Columns</div><div class="v">{{ summary.total_columns }}</div></div>
+          <div class="metric"><div class="k">Total Data Size (bytes)</div><div class="v">{{ summary.total_data_size }}</div></div>
+          <div class="metric"><div class="k">Dictionary + Hash Index</div><div class="v">{{ summary.total_dictionary + summary.total_hash_index }}</div></div>
+        </div>
+        <br />
+        <p class="muted" style="margin: 0">
+          For streamed narrative, use the Story UI app (link above). This page keeps charts + stats only.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Tables</h2>
+        <ul class="tables-list">
+          {% for t in tables %}
+          <li>{{ t }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="card charts">
+        <div>
+          <h2>Top Columns by Data Size</h2>
+          <canvas id="sizeChart"></canvas>
+        </div>
+        <div>
+          <h2>Top Columns by Cardinality</h2>
+          <canvas id="cardChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Column Statistics (first 100 rows)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Column</th>
+              <th>Cardinality</th>
+              <th>DataSize</th>
+              <th>Dictionary</th>
+              <th>HashIndex</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in stats_rows %}
+            <tr>
+              <td>{{ r.TableName }}</td>
+              <td>{{ r.ColumnName }}</td>
+              <td>{{ r.Cardinality }}</td>
+              <td>{{ r.DataSize }}</td>
+              <td>{{ r.Dictionary }}</td>
+              <td>{{ r.HashIndex }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% endif %}
+    </div>
+
+    {% if summary %}
+    <script>
+      const sizeRows = {{ summary.top_size|tojson }};
+      const cardRows = {{ summary.top_cardinality|tojson }};
+
+      const sizeLabels = sizeRows.map((r) => `${r.TableName}.${r.ColumnName}`);
+      const sizeVals = sizeRows.map((r) => Number(r.DataSize || 0));
+      const cardLabels = cardRows.map((r) => `${r.TableName}.${r.ColumnName}`);
+      const cardVals = cardRows.map((r) => Number(r.Cardinality || 0));
+
+      new Chart(document.getElementById("sizeChart"), {
+        type: "bar",
+        data: {
+          labels: sizeLabels,
+          datasets: [{ label: "DataSize", data: sizeVals, backgroundColor: "rgba(56, 189, 248, 0.7)" }],
+        },
+        options: {
+          indexAxis: "y",
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { color: "#cbd5e1" } }, y: { ticks: { color: "#cbd5e1" } } },
+        },
+      });
+
+      new Chart(document.getElementById("cardChart"), {
+        type: "bar",
+        data: {
+          labels: cardLabels,
+          datasets: [{ label: "Cardinality", data: cardVals, backgroundColor: "rgba(34, 197, 94, 0.7)" }],
+        },
+        options: {
+          indexAxis: "y",
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { color: "#cbd5e1" } }, y: { ticks: { color: "#cbd5e1" } } },
+        },
+      });
+    </script>
+    {% endif %}
+  </body>
+</html>

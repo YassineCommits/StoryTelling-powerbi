@@ -1,0 +1,23 @@
+{
+  "name": "pbix-story-ui",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.0.55",
+    "ai": "^4.1.0",
+    "next": "14.2.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.0"
+  }
+}

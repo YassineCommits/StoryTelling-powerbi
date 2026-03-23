@@ -1,0 +1,16 @@
+{
+  "models": {
+    "default": {
+      "provider": "openai",
+      "model": "llama3.2:3b",
+      "baseURL": "http://127.0.0.1:11434/v1",
+      "apiKey": "ollama"
+    }
+  },
+  "mcpServers": {
+    "pbixray": {
+      "command": "python",
+      "args": ["/absolute/path/to/pbixray-mcp-server/src/pbixray_server.py"]
+    }
+  }
+}
